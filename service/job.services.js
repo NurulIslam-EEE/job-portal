@@ -17,8 +17,8 @@ exports.updateJobService = async (id, data) => {
   return job;
 };
 
-exports.getJobService = async (filters) => {
-  const job = await Job.find(filters);
+exports.getJobService = async (filters,query) => {
+  const job = await Job.find(filters,"-application").sort(query.sort);
 
   return job;
 };
@@ -29,16 +29,26 @@ exports.getJobByIdService = async (id) => {
   return job;
 };
 
-exports.applyJobService = async (data, id,email) => {
+exports.applyJobService = async (data, id, email) => {
   const user = await User.findOne({ email: email });
 
-  data.name = user.firstName+user.lastName;
-  const job = await Apply.create(data);
-  const result = await Job.updateOne(
-    { _id: id },
-    { $push: { application: job.id } }
-  );
- 
-  console.log('applied',job);
-  return job;
+  data.name = user.firstName + user.lastName;
+  const theJob = await Job.findOne({ _id: id });
+  const timeDiff = new Date(theJob.deadLine).getTime() - new Date().getTime();
+
+  const alreadyApplied = theJob.application.includes(user._id);
+
+  if (timeDiff > 0 && !alreadyApplied) {
+    const job = await Apply.create(data);
+
+    const result = await Job.updateOne(
+      { _id: id },
+      { $push: { application: job._id } }
+    );
+    return {status:"success",message:"Successfully applied the job"};
+  } else if (timeDiff < 0 && !alreadyApplied) {
+    return {status:"fail",message:"The deadline is over"};
+  } else if ((timeDiff < 0 || timeDiff > 0 )&&alreadyApplied) {
+    return {status:"fail",message:"Already applied the job"};
+  }
 };

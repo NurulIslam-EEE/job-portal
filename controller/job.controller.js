@@ -44,7 +44,16 @@ exports.createJob = async (req, res, next) => {
     try {
       // console.log('query',req.query);
       let filters = { ...req.query };
-      const result = await getJobService(filters);
+      const excludeFields = ["sort", "page", "limit"];
+      excludeFields.forEach((field) => delete filters[field]);
+
+      const queries = {};
+    if (req.query.sort) {
+      // price quantity ---> 'price quantity'
+      const sortBy = req.query.sort.split(",").join(" ");
+      queries.sort = sortBy;
+    }
+      const result = await getJobService(filters,queries);
   
       res.status(200).json({
         status: "success",
@@ -83,10 +92,7 @@ exports.createJob = async (req, res, next) => {
       req.body.applied=id
      
       const result=await applyJobService(req.body,id,req.user.email)
-      res.status(200).json({
-        status: "success",
-        data: result,
-      });
+      res.status(200).json(result);
     } catch (error) {
       res.status(400).json({
         status: "fail",

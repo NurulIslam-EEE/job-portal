@@ -9,6 +9,6 @@ exports.getManagerJobService = async (email) => {
 
   exports.getManagerJobByIdService = async (id,email) => {
     const user=   await User.findOne({ email :email})
-       const jobs = await Job.find({ _id:id,hiringManager:user._id}).populate('application');
+       const jobs = await Job.findOne({ _id:id,hiringManager:user._id}).populate('application');
        return jobs;
      };
